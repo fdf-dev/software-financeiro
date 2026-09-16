@@ -1,0 +1,12 @@
+registro;nome;titulacao;cpf;salario;horas semanais;meses participacao;inicio participacao;valor bolsa;tempo desenvolvimento;inicio projeto;tem garantia;meses garantia;tipo;descricao;unidade;valor
+projeto;Sistema de inovação;;;;;;;;24;2026-10-01;não;0;;;;
+pesquisador;Ana Souza;Mestrado;529.982.247-25;8500,00;20;24;2026-10;;
+pesquisador;Bruno Lima;Doutorado;111.444.777-35;10500,00;20;24;2026-10;;
+pesquisador;Carla Mendes;Especialização;935.411.347-80;7200,00;15;24;2026-10;;
+pesquisador;Daniel Alves;Graduação;153.509.460-56;5600,00;10;24;2026-10;;
+aluno;Eduardo Santos;Graduação;;;20;22;2026-12;1800,00
+aluno;Fernanda Costa;Graduação;;;20;22;2026-12;1800,00
+aluno;Gabriel Oliveira;Técnico;;;20;22;2026-12;1500,00
+aluno;Helena Martins;Graduação;;;20;22;2026-12;1800,00
+aluno;Igor Rodrigues;Mestrado;;;20;22;2026-12;2200,00
+servico;;;;;;;;;;;;;Diárias;Viagem para reunião técnica;2;450,00
