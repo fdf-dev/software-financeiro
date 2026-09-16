@@ -8,21 +8,22 @@
 
     <main class="w-full max-w-6xl bg-gray-800 rounded-2xl shadow-xl border border-gray-700 p-6">
       <nav v-if="projetoConfigurado" class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6" aria-label="Etapas do projeto">
-        <button
-          v-for="etapa in etapas"
-          :key="etapa.id"
-          type="button"
-          @click="abrirEtapa(etapa.id)"
-          :disabled="!etapaDisponivel(etapa.id) && etapa.id !== paginaAtual"
-          class="rounded-lg border px-3 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-          :class="paginaAtual === etapa.id
-            ? 'border-emerald-500 bg-emerald-500 text-gray-900'
-            : etapaDisponivel(etapa.id)
-              ? 'border-gray-600 bg-gray-700 text-gray-300 hover:border-emerald-500 hover:text-white'
-              : 'border-gray-700 bg-gray-800 text-gray-500'"
-        >
-          {{ etapa.nome }}
-        </button>
+        <template v-for="etapa in etapas" :key="etapa.id">
+          <button
+            v-if="etapa.id !== 'tripartite' || modeloSelecionado === 'EMBRAPII Tripartite'"
+            type="button"
+            @click="abrirEtapa(etapa.id)"
+            :disabled="!etapaDisponivel(etapa.id) && etapa.id !== paginaAtual"
+            class="rounded-lg border px-3 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            :class="paginaAtual === etapa.id
+              ? 'border-emerald-500 bg-emerald-500 text-gray-900'
+              : etapaDisponivel(etapa.id)
+                ? 'border-gray-600 bg-gray-700 text-gray-300 hover:border-emerald-500 hover:text-white'
+                : 'border-gray-700 bg-gray-800 text-gray-500'"
+          >
+            {{ etapa.nome }}
+          </button>
+        </template>
       </nav>
 
       <div
@@ -174,15 +175,16 @@
         </fieldset>
 
         <button
-          type="submit"
-          :disabled="!formularioValido"
+          type="button"
+          @click.prevent="continuarParaEquipe"
           class="w-full font-bold py-3 px-4 rounded-lg transition-colors"
           :class="formularioValido
             ? 'bg-emerald-500 hover:bg-emerald-600 text-gray-900'
-            : 'bg-gray-600 text-gray-400 cursor-not-allowed'"
+            : 'bg-gray-600 text-gray-200 hover:bg-gray-500'"
         >
-          {{ projetoConfigurado ? 'Salvar alterações e voltar para a equipe' : 'Continuar para a simulação' }}
+          {{ projetoConfigurado ? 'Salvar alterações e voltar para a equipe' : 'Continuar para a equipe' }}
         </button>
+        <p v-if="mensagemValidacaoProjeto" class="text-sm text-amber-300" role="alert">{{ mensagemValidacaoProjeto }}</p>
       </form>
 
       <section v-else-if="paginaAtual === 'equipe'">
@@ -737,12 +739,241 @@
 
         <button
           type="button"
-          @click="paginaAtual = 'simulador'"
+          @click="paginaAtual = 'sintese'"
           :disabled="!servicosPreenchidos"
           class="w-full mt-6 font-bold py-3 px-4 rounded-lg transition-colors"
           :class="servicosPreenchidos
             ? 'bg-emerald-500 hover:bg-emerald-600 text-gray-900'
             : 'bg-gray-600 text-gray-400 cursor-not-allowed'"
+        >
+          Continuar para a síntese
+        </button>
+      </section>
+
+      <section v-else-if="paginaAtual === 'sintese'">
+        <div class="mb-6">
+          <p class="text-sm font-semibold uppercase tracking-wider text-emerald-400">Visão geral</p>
+          <h2 class="text-xl font-bold text-white mt-1">Síntese dos valores</h2>
+          <p class="text-sm text-gray-400 mt-1">Confira os totais calculados a partir dos dados cadastrados nas etapas anteriores.</p>
+        </div>
+
+        <div class="space-y-5">
+          <article class="rounded-xl border border-gray-700 bg-gray-900/40 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="font-semibold text-emerald-300">Pesquisadores</h3>
+              <span class="text-xs text-gray-500">{{ equipeFinanceira.length }} linha(s)</span>
+            </div>
+            <div class="mt-4 overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="text-xs uppercase text-gray-500"><tr><th class="pb-2 pr-4">Pesquisador</th><th class="pb-2 pr-4">Meses</th><th class="pb-2 pr-4">Valor mensal</th><th class="pb-2 text-right">Valor no projeto</th></tr></thead>
+                <tbody>
+                  <tr v-for="(membro, indice) in equipeFinanceira" :key="`sintese-equipe-${indice}`" class="border-t border-gray-700/70">
+                    <td class="py-3 pr-4 text-gray-200">{{ membro.nome || `Pesquisador ${indice + 1}` }}</td>
+                    <td class="py-3 pr-4 text-gray-300">{{ membro.mesesParticipacao || 0 }}</td>
+                    <td class="py-3 pr-4 font-mono text-gray-300">{{ formatarMoeda(membro.salario) }}</td>
+                    <td class="py-3 text-right font-mono text-white">{{ formatarMoeda(obterValorNoProjeto(membro.salario, membro.mesesParticipacao)) }}</td>
+                  </tr>
+                </tbody>
+                <tfoot><tr class="border-t border-emerald-500/30 text-emerald-300"><td class="pt-3 font-semibold" colspan="3">Total de bolsas para pesquisadores</td><td class="pt-3 text-right font-mono font-semibold">{{ formatarMoeda(totalSalariosPeriodo) }}</td></tr></tfoot>
+              </table>
+            </div>
+          </article>
+
+          <article class="rounded-xl border border-gray-700 bg-gray-900/40 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="font-semibold text-emerald-300">Alunos</h3>
+              <span class="text-xs text-gray-500">{{ alunos.length }} linha(s)</span>
+            </div>
+            <div class="mt-4 overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="text-xs uppercase text-gray-500"><tr><th class="pb-2 pr-4">Aluno</th><th class="pb-2 pr-4">Meses</th><th class="pb-2 pr-4">Valor da bolsa</th><th class="pb-2 text-right">Valor no projeto</th></tr></thead>
+                <tbody>
+                  <tr v-for="(aluno, indice) in alunos" :key="`sintese-aluno-${aluno.id}`" class="border-t border-gray-700/70">
+                    <td class="py-3 pr-4 text-gray-200">{{ aluno.nome || `Aluno ${indice + 1}` }}</td>
+                    <td class="py-3 pr-4 text-gray-300">{{ aluno.mesesParticipacao || 0 }}</td>
+                    <td class="py-3 pr-4 font-mono text-gray-300">{{ formatarMoeda(aluno.valorBolsa) }}</td>
+                    <td class="py-3 text-right font-mono text-white">{{ formatarMoeda(obterValorNoProjeto(aluno.valorBolsa, aluno.mesesParticipacao)) }}</td>
+                  </tr>
+                </tbody>
+                <tfoot><tr class="border-t border-emerald-500/30 text-emerald-300"><td class="pt-3 font-semibold" colspan="3">Total de bolsas para alunos</td><td class="pt-3 text-right font-mono font-semibold">{{ formatarMoeda(totalBolsasPeriodo) }}</td></tr></tfoot>
+              </table>
+            </div>
+          </article>
+
+          <article class="rounded-xl border border-gray-700 bg-gray-900/40 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="font-semibold text-emerald-300">Serviços e locomoção</h3>
+              <span class="text-xs text-gray-500">{{ servicosLocomocao.length }} linha(s)</span>
+            </div>
+            <div class="mt-4 overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="text-xs uppercase text-gray-500"><tr><th class="pb-2 pr-4">Descrição</th><th class="pb-2 pr-4">Unidades</th><th class="pb-2 pr-4">Valor unitário</th><th class="pb-2 text-right">Valor total</th></tr></thead>
+                <tbody>
+                  <tr v-for="(item, indice) in servicosLocomocao" :key="`sintese-servico-${item.id || indice}`" class="border-t border-gray-700/70">
+                    <td class="py-3 pr-4 text-gray-200">{{ item.descricao || `Serviço ${indice + 1}` }}</td>
+                    <td class="py-3 pr-4 text-gray-300">{{ item.unidade || 0 }}</td>
+                    <td class="py-3 pr-4 font-mono text-gray-300">{{ formatarMoeda(item.valor) }}</td>
+                    <td class="py-3 text-right font-mono text-white">{{ formatarMoeda(obterValorNoProjeto(item.valor, item.unidade)) }}</td>
+                  </tr>
+                </tbody>
+                <tfoot><tr class="border-t border-emerald-500/30 text-emerald-300"><td class="pt-3 font-semibold" colspan="3">Total de serviços e locomoção</td><td class="pt-3 text-right font-mono font-semibold">{{ formatarMoeda(totalServicos) }}</td></tr></tfoot>
+              </table>
+            </div>
+          </article>
+
+          <article class="rounded-xl border border-sky-500/30 bg-sky-950/20 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="font-semibold text-sky-300">Contrapartida não financeira</h3>
+              <span class="text-xs text-gray-500">{{ linhasContrapartida.length }} linha(s)</span>
+            </div>
+            <p class="mt-1 text-xs text-gray-400">Área separada; não compõe o total financeiro estimado.</p>
+            <div class="mt-4 overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="text-xs uppercase text-gray-500"><tr><th class="pb-2 pr-4">Pessoa</th><th class="pb-2 pr-4">Meses</th><th class="pb-2 pr-4">Valor mensal</th><th class="pb-2 text-right">Valor no projeto</th></tr></thead>
+                <tbody>
+                  <tr v-for="(membro, indice) in linhasContrapartida" :key="`sintese-contrapartida-${indice}`" class="border-t border-sky-500/20">
+                    <td class="py-3 pr-4 text-gray-200">{{ membro.nome || `Pessoa ${indice + 1}` }}</td>
+                    <td class="py-3 pr-4 text-gray-300">{{ membro.mesesParticipacao || 0 }}</td>
+                    <td class="py-3 pr-4 font-mono text-gray-300">{{ formatarMoeda(obterValorContrapartidaMensal(membro)) }}</td>
+                    <td class="py-3 text-right font-mono text-sky-300">{{ formatarMoeda(obterValorContrapartidaPeriodo(membro)) }}</td>
+                  </tr>
+                </tbody>
+                <tfoot><tr class="border-t border-sky-500/40 text-sky-300"><td class="pt-3 font-semibold" colspan="3">Total de contrapartida não financeira</td><td class="pt-3 text-right font-mono font-semibold">{{ formatarMoeda(totalContrapartidaPeriodo) }}</td></tr></tfoot>
+              </table>
+            </div>
+          </article>
+        </div>
+
+        <div class="mt-6 grid gap-4 md:grid-cols-2">
+          <article class="rounded-xl border border-gray-700 bg-gray-900/40 p-4">
+            <h3 class="font-semibold text-emerald-300">Totais por área</h3>
+            <dl class="mt-4 space-y-3 text-sm">
+              <div class="flex justify-between gap-4"><dt class="text-gray-400">Pesquisadores</dt><dd class="font-mono text-white">{{ formatarMoeda(totalSalariosPeriodo) }}</dd></div>
+              <div class="flex justify-between gap-4"><dt class="text-gray-400">Alunos</dt><dd class="font-mono text-white">{{ formatarMoeda(totalBolsasPeriodo) }}</dd></div>
+              <div class="flex justify-between gap-4"><dt class="text-gray-400">Serviços</dt><dd class="font-mono text-white">{{ formatarMoeda(totalServicos) }}</dd></div>
+              <div class="flex justify-between gap-4"><dt class="text-gray-400">Contrapartida não financeira</dt><dd class="font-mono text-sky-300">{{ formatarMoeda(totalContrapartidaPeriodo) }}</dd></div>
+            </dl>
+          </article>
+        </div>
+
+        <div class="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="font-semibold text-emerald-300">Total financeiro estimado</h3>
+              <p class="mt-1 text-xs text-gray-400">Soma apenas equipe, bolsas e serviços. A contrapartida não financeira fica fora deste total.</p>
+            </div>
+            <span class="font-mono text-xl font-bold text-emerald-400">{{ formatarMoeda(totalFinanceiroEstimado) }}</span>
+          </div>
+        </div>
+
+        <div class="mt-6 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            @click="selecionarModelo('EMBRAPII Tripartite')"
+            class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition-colors"
+          >
+            Continuar com EMBRAPII Tripartite
+          </button>
+          <button
+            type="button"
+            @click="selecionarModelo('SEBRAE')"
+            class="w-full bg-sky-500 hover:bg-sky-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition-colors"
+          >
+            Continuar com SEBRAE
+          </button>
+        </div>
+      </section>
+
+      <section v-else-if="paginaAtual === 'tripartite'">
+        <div class="mb-6">
+          <p class="text-sm font-semibold uppercase tracking-wider text-emerald-400">Modelo EMBRAPII Tripartite</p>
+          <h2 class="text-xl font-bold text-white mt-1">Classificação dos valores</h2>
+          <p class="text-sm text-gray-400 mt-1">Mantenha as mesmas informações da Síntese e classifique cada linha antes de continuar.</p>
+        </div>
+
+        <div class="space-y-5">
+          <article class="rounded-xl border border-gray-700 bg-gray-900/40 p-4">
+            <h3 class="font-semibold text-emerald-300">Pesquisadores</h3>
+            <div class="mt-4 overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="text-xs uppercase text-gray-500"><tr><th class="pb-2 pr-4">Pesquisador</th><th class="pb-2 pr-4">Meses</th><th class="pb-2 pr-4">Valor mensal</th><th class="pb-2 pr-4">Valor no projeto</th><th class="pb-2">Financeiro</th></tr></thead>
+                <tbody>
+                  <tr v-for="(membro, indice) in equipeFinanceira" :key="`tripartite-equipe-${indice}`" class="border-t border-gray-700/70">
+                    <td class="py-3 pr-4 text-gray-200">{{ membro.nome || `Pesquisador ${indice + 1}` }}</td>
+                    <td class="py-3 pr-4 text-gray-300">{{ membro.mesesParticipacao || 0 }}</td>
+                    <td class="py-3 pr-4 font-mono text-gray-300">{{ formatarMoeda(membro.salario) }}</td>
+                    <td class="py-3 pr-4 font-mono text-white">{{ formatarMoeda(obterValorNoProjeto(membro.salario, membro.mesesParticipacao)) }}</td>
+                    <td class="py-3"><select v-model="membro.classificacaoFinanceira" class="w-full min-w-32 bg-gray-700 border border-gray-600 rounded-lg px-2 py-2 text-white focus:outline-none focus:border-emerald-500"><option value="Empresa">Empresa</option><option value="EMBRAPII">EMBRAPII</option></select></td>
+                  </tr>
+                </tbody>
+                <tfoot><tr class="border-t border-emerald-500/30 text-emerald-300"><td class="pt-3 font-semibold" colspan="4">Total de bolsas para pesquisadores</td><td class="pt-3 text-right font-mono font-semibold">{{ formatarMoeda(totalSalariosPeriodo) }}</td></tr></tfoot>
+              </table>
+            </div>
+          </article>
+
+          <article class="rounded-xl border border-gray-700 bg-gray-900/40 p-4">
+            <h3 class="font-semibold text-emerald-300">Alunos</h3>
+            <div class="mt-4 overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="text-xs uppercase text-gray-500"><tr><th class="pb-2 pr-4">Aluno</th><th class="pb-2 pr-4">Meses</th><th class="pb-2 pr-4">Valor da bolsa</th><th class="pb-2 pr-4">Valor no projeto</th><th class="pb-2">Financeiro</th></tr></thead>
+                <tbody>
+                  <tr v-for="(aluno, indice) in alunos" :key="`tripartite-aluno-${aluno.id}`" class="border-t border-gray-700/70">
+                    <td class="py-3 pr-4 text-gray-200">{{ aluno.nome || `Aluno ${indice + 1}` }}</td>
+                    <td class="py-3 pr-4 text-gray-300">{{ aluno.mesesParticipacao || 0 }}</td>
+                    <td class="py-3 pr-4 font-mono text-gray-300">{{ formatarMoeda(aluno.valorBolsa) }}</td>
+                    <td class="py-3 pr-4 font-mono text-white">{{ formatarMoeda(obterValorNoProjeto(aluno.valorBolsa, aluno.mesesParticipacao)) }}</td>
+                    <td class="py-3"><select v-model="aluno.classificacaoFinanceira" class="w-full min-w-32 bg-gray-700 border border-gray-600 rounded-lg px-2 py-2 text-white focus:outline-none focus:border-emerald-500"><option value="Empresa">Empresa</option><option value="EMBRAPII">EMBRAPII</option></select></td>
+                  </tr>
+                </tbody>
+                <tfoot><tr class="border-t border-emerald-500/30 text-emerald-300"><td class="pt-3 font-semibold" colspan="4">Total de bolsas para alunos</td><td class="pt-3 text-right font-mono font-semibold">{{ formatarMoeda(totalBolsasPeriodo) }}</td></tr></tfoot>
+              </table>
+            </div>
+          </article>
+
+          <article class="rounded-xl border border-gray-700 bg-gray-900/40 p-4">
+            <h3 class="font-semibold text-emerald-300">Serviços e locomoção</h3>
+            <div class="mt-4 overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="text-xs uppercase text-gray-500"><tr><th class="pb-2 pr-4">Descrição</th><th class="pb-2 pr-4">Unidades</th><th class="pb-2 pr-4">Valor unitário</th><th class="pb-2 pr-4">Valor total</th><th class="pb-2">Financeiro</th></tr></thead>
+                <tbody>
+                  <tr v-for="(item, indice) in servicosLocomocao" :key="`tripartite-servico-${item.id || indice}`" class="border-t border-gray-700/70">
+                    <td class="py-3 pr-4 text-gray-200">{{ item.descricao || `Serviço ${indice + 1}` }}</td>
+                    <td class="py-3 pr-4 text-gray-300">{{ item.unidade || 0 }}</td>
+                    <td class="py-3 pr-4 font-mono text-gray-300">{{ formatarMoeda(item.valor) }}</td>
+                    <td class="py-3 pr-4 font-mono text-white">{{ formatarMoeda(obterValorNoProjeto(item.valor, item.unidade)) }}</td>
+                    <td class="py-3"><select v-model="item.classificacaoFinanceira" class="w-full min-w-32 bg-gray-700 border border-gray-600 rounded-lg px-2 py-2 text-white focus:outline-none focus:border-emerald-500"><option value="Empresa">Empresa</option><option value="EMBRAPII">EMBRAPII</option></select></td>
+                  </tr>
+                </tbody>
+                <tfoot><tr class="border-t border-emerald-500/30 text-emerald-300"><td class="pt-3 font-semibold" colspan="4">Total de serviços e locomoção</td><td class="pt-3 text-right font-mono font-semibold">{{ formatarMoeda(totalServicos) }}</td></tr></tfoot>
+              </table>
+            </div>
+          </article>
+
+          <article class="rounded-xl border border-sky-500/30 bg-sky-950/20 p-4">
+            <h3 class="font-semibold text-sky-300">Contrapartida não financeira</h3>
+            <p class="mt-1 text-xs text-gray-400">Selecione P&amp;D ou UE para cada linha. Esta área não compõe o total financeiro.</p>
+            <div class="mt-4 overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="text-xs uppercase text-gray-500"><tr><th class="pb-2 pr-4">Pessoa</th><th class="pb-2 pr-4">Meses</th><th class="pb-2 pr-4">Valor mensal</th><th class="pb-2 pr-4">Valor no projeto</th><th class="pb-2">Tipo</th></tr></thead>
+                <tbody>
+                  <tr v-for="(membro, indice) in linhasContrapartida" :key="`tripartite-contrapartida-${indice}`" class="border-t border-sky-500/20">
+                    <td class="py-3 pr-4 text-gray-200">{{ membro.nome || `Pessoa ${indice + 1}` }}</td>
+                    <td class="py-3 pr-4 text-gray-300">{{ membro.mesesParticipacao || 0 }}</td>
+                    <td class="py-3 pr-4 font-mono text-gray-300">{{ formatarMoeda(obterValorContrapartidaMensal(membro)) }}</td>
+                    <td class="py-3 pr-4 font-mono text-sky-300">{{ formatarMoeda(obterValorContrapartidaPeriodo(membro)) }}</td>
+                    <td class="py-3"><select v-model="membro.classificacaoNaoFinanceira" class="w-full min-w-28 bg-gray-700 border border-gray-600 rounded-lg px-2 py-2 text-white focus:outline-none focus:border-sky-500"><option value="P&D">P&amp;D</option><option value="UE">UE</option></select></td>
+                  </tr>
+                </tbody>
+                <tfoot><tr class="border-t border-sky-500/40 text-sky-300"><td class="pt-3 font-semibold" colspan="4">Total de contrapartida não financeira</td><td class="pt-3 text-right font-mono font-semibold">{{ formatarMoeda(totalContrapartidaPeriodo) }}</td></tr></tfoot>
+              </table>
+            </div>
+          </article>
+        </div>
+
+        <button
+          type="button"
+          @click.prevent="continuarParaSimulacao"
+          class="w-full mt-6 bg-emerald-500 hover:bg-emerald-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition-colors"
         >
           Continuar para a simulação
         </button>
@@ -753,6 +984,7 @@
           <div>
             <p class="text-sm font-semibold uppercase tracking-wider text-emerald-400">Projeto configurado</p>
             <h2 class="text-xl font-bold text-white mt-1">Simulador de Juros Compostos</h2>
+            <p v-if="modeloSelecionado" class="text-sm text-sky-300 mt-1">Modelo selecionado: {{ modeloSelecionado }}</p>
           </div>
           <button type="button" class="rounded-lg border border-red-500/60 px-3 py-2 text-sm font-semibold text-red-300 hover:bg-red-500/10 transition-colors" @click="abrirConfirmacaoLimpezaPagina('simulador')">
             Limpar página
@@ -918,12 +1150,16 @@ const formularioValido = computed(() => {
 
 const projetoConfigurado = ref(false)
 const paginaAtual = ref('projeto')
+const modeloSelecionado = ref('')
+const mensagemValidacaoProjeto = ref('')
 const etapas = [
   { id: 'projeto', nome: 'Projeto' },
   { id: 'equipe', nome: 'Equipe' },
   { id: 'alunos', nome: 'Alunos' },
   { id: 'servicos', nome: 'Serviços e locomoção' },
   { id: 'contrapartida', nome: 'Contrapartida' },
+  { id: 'sintese', nome: 'Síntese' },
+  { id: 'tripartite', nome: 'EMBRAPII Tripartite' },
   { id: 'simulador', nome: 'Simulação' }
 ]
 
@@ -931,6 +1167,8 @@ const etapaValida = (id) => {
   if (id === 'projeto') return formularioValido.value
   if (id === 'equipe') return equipePreenchida.value
   if (id === 'contrapartida') return equipePreenchida.value
+  if (id === 'sintese') return servicosPreenchidos.value
+  if (id === 'tripartite') return true
   if (id === 'alunos') return alunosPreenchidos.value
   if (id === 'servicos') return servicosPreenchidos.value
   if (id === 'simulador') return projetoConfigurado.value && equipePreenchida.value && alunosPreenchidos.value && servicosPreenchidos.value
@@ -954,6 +1192,37 @@ const abrirEtapa = (id) => {
   if (indexDestino <= indexAtual || etapaDisponivel(id)) {
     paginaAtual.value = id
   }
+}
+
+const selecionarModelo = (modelo) => {
+  modeloSelecionado.value = modelo
+  paginaAtual.value = modelo === 'EMBRAPII Tripartite' ? 'tripartite' : 'simulador'
+}
+
+const continuarParaEquipe = () => {
+  if (!projeto.tempoMeses || Number(projeto.tempoMeses) < 1) {
+    mensagemValidacaoProjeto.value = 'Informe o tempo de desenvolvimento em meses.'
+    return
+  }
+
+  if (!projeto.inicioPrevisto) {
+    mensagemValidacaoProjeto.value = 'Informe a data de início prevista.'
+    return
+  }
+
+  if (projeto.temGarantia && (!projeto.mesesGarantia || Number(projeto.mesesGarantia) < 1)) {
+    mensagemValidacaoProjeto.value = 'Informe os meses de garantia e encerramento.'
+    return
+  }
+
+  mensagemValidacaoProjeto.value = ''
+  projetoConfigurado.value = true
+  paginaAtual.value = 'equipe'
+  configurarProjeto()
+}
+
+const continuarParaSimulacao = () => {
+  paginaAtual.value = 'simulador'
 }
 
 const equipeFinanceira = reactive([{
@@ -989,6 +1258,82 @@ const servicosLocomocao = reactive([{
   unidade: 1,
   valor: ''
 }])
+
+const totalSalariosMensais = computed(() => equipeFinanceira.reduce((total, membro) => (
+  total + (Number(membro.salario) > 0 ? Number(membro.salario) : 0)
+), 0))
+
+const totalSalariosPeriodo = computed(() => equipeFinanceira.reduce((total, membro) => {
+  const salario = Number(membro.salario)
+  const meses = Number(membro.mesesParticipacao)
+
+  return total + (salario > 0 && meses > 0 ? salario * meses : 0)
+}, 0))
+
+const totalBolsasMensais = computed(() => alunos.reduce((total, aluno) => (
+  total + (Number(aluno.valorBolsa) > 0 ? Number(aluno.valorBolsa) : 0)
+), 0))
+
+const totalBolsasPeriodo = computed(() => alunos.reduce((total, aluno) => {
+  const bolsa = Number(aluno.valorBolsa)
+  const meses = Number(aluno.mesesParticipacao)
+
+  return total + (bolsa > 0 && meses > 0 ? bolsa * meses : 0)
+}, 0))
+
+const totalServicos = computed(() => servicosLocomocao.reduce((total, item) => {
+  const unidade = Number(item.unidade)
+  const valor = Number(item.valor)
+
+  return total + (unidade > 0 && valor >= 0 ? unidade * valor : 0)
+}, 0))
+
+const totalContrapartidaMensal = computed(() => linhasContrapartida.value.reduce((total, membro) => {
+  const valorHora = obterValorHoraNumero(membro.salario, membro.naoDocente)
+  const horasMensais = Number(membro.horasSemanais)
+
+  return total + (valorHora > 0 && horasMensais > 0 ? valorHora * horasMensais : 0)
+}, 0))
+
+const totalContrapartidaPeriodo = computed(() => linhasContrapartida.value.reduce((total, membro) => {
+  const valorHora = obterValorHoraNumero(membro.salario, membro.naoDocente)
+  const horasMensais = Number(membro.horasSemanais)
+  const meses = Number(membro.mesesParticipacao)
+
+  return total + (valorHora > 0 && horasMensais > 0 && meses > 0 ? valorHora * horasMensais * meses : 0)
+}, 0))
+
+const totalFinanceiroEstimado = computed(() => (
+  totalSalariosPeriodo.value + totalBolsasPeriodo.value + totalServicos.value
+))
+
+const tripartitePreenchido = computed(() => {
+  const valoresFinanceiros = [
+    ...equipeFinanceira,
+    ...alunos,
+    ...servicosLocomocao
+  ]
+
+  return valoresFinanceiros.every((registro) => registro.classificacaoFinanceira) &&
+    linhasContrapartida.value.every((membro) => membro.classificacaoNaoFinanceira)
+})
+
+const obterValorNoProjeto = (valorMensal, meses) => {
+  const valor = Number(valorMensal)
+  const quantidade = Number(meses)
+
+  return Number.isFinite(valor) && valor > 0 && Number.isFinite(quantidade) && quantidade > 0
+    ? valor * quantidade
+    : 0
+}
+
+const obterValorContrapartidaMensal = (membro) => (
+  obterValorHoraNumero(membro.salario, membro.naoDocente) * (Number(membro.horasSemanais) || 0)
+)
+
+const obterValorContrapartidaPeriodo = (membro) => (
+  obterValorContrapartidaMensal(membro) * (Number(membro.mesesParticipacao) || 0)
+)
 const mensagemImportacaoCadastro = ref('')
 const mensagemImportacaoCsv = ref('')
 const confirmacaoLimpezaAberta = ref(false)
@@ -1006,20 +1351,26 @@ const abrirConfirmacaoLimpezaPagina = (pagina) => {
   confirmacaoLimpezaPagina.value = pagina
 }
 
+const limparDadosProjeto = () => {
+  Object.assign(projeto, {
+    nome: '',
+    tempoMeses: '',
+    inicioPrevisto: '',
+    temGarantia: false,
+    mesesGarantia: ''
+  })
+  form.periodo = ''
+  projetoConfigurado.value = false
+  paginaAtual.value = 'projeto'
+  mensagemValidacaoProjeto.value = ''
+  confirmacaoLimpezaPagina.value = ''
+}
+
 const limparPaginaLocal = () => {
   const pagina = confirmacaoLimpezaPagina.value
 
   if (pagina === 'projeto' || pagina === 'dados-projeto') {
-    Object.assign(projeto, {
-      nome: '',
-      tempoMeses: '',
-      inicioPrevisto: '',
-      temGarantia: false,
-      mesesGarantia: ''
-    })
-    form.periodo = ''
-    projetoConfigurado.value = false
-    paginaAtual.value = 'projeto'
+    limparDadosProjeto()
   }
 
   if (pagina === 'equipe') {
@@ -1066,6 +1417,7 @@ const limparPaginaLocal = () => {
     form.taxa = ''
     form.periodo = projeto.tempoMeses || ''
     resultado.value = null
+    modeloSelecionado.value = ''
   }
 
   confirmacaoLimpezaPagina.value = ''
@@ -1121,6 +1473,7 @@ const limparFormularios = () => {
   form.taxa = ''
   form.periodo = ''
   resultado.value = null
+  modeloSelecionado.value = ''
   proximoIdAluno.value = 2
   proximoIdServico.value = 2
   projetoConfigurado.value = false
@@ -1183,7 +1536,7 @@ const importarCadastroCsv = (evento) => {
         projetoImportado = {
           nome,
           tempoMeses: converterNumeroCsv(colunas[indice('tempo desenvolvimento')]),
-          inicioPrevisto: (colunas[indice('inicio projeto')] || '').trim(),
+          inicioPrevisto: normalizarDataCsv(colunas[indice('inicio projeto')]),
           temGarantia: ['sim', 'true', '1', 'yes'].includes(temGarantia),
           mesesGarantia: converterNumeroCsv(colunas[indice('meses garantia')])
         }
@@ -1386,6 +1739,16 @@ const converterNumeroCsv = (valor) => {
   return Number(numero)
 }
 
+const normalizarDataCsv = (valor) => {
+  const texto = String(valor || '').trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto
+
+  const correspondencia = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (!correspondencia) return texto
+
+  return `${correspondencia[3]}-${correspondencia[2]}-${correspondencia[1]}`
+}
+
 const importarOrcamentoCsv = (evento) => {
   const arquivo = evento.target.files?.[0]
   evento.target.value = ''
@@ -1515,17 +1878,18 @@ const atualizarSalarioContrapartida = (membro, evento) => {
   membro.salario = evento.target.value
 }
 
-const obterValorHora = (salario, naoDocente = false) => {
+const obterValorHoraNumero = (salario, naoDocente = false) => {
   const valor = Number(salario)
-  if (!Number.isFinite(valor) || valor <= 0) return '—'
+  if (!Number.isFinite(valor) || valor <= 0) return 0
 
-  let fator = 0
+  return naoDocente
+    ? ((valor * 13) / 12) / 160
+    : ((valor * 13.5) / 12) / 160
+}
 
-  if (naoDocente) {
-    fator = ((valor * 13) / 12) / 160
-  } else {
-    fator = ((valor * 13.5) / 12) / 160
-  }
+const obterValorHora = (salario, naoDocente = false) => {
+  const fator = obterValorHoraNumero(salario, naoDocente)
+  if (!fator) return '—'
 
   return formatarMoeda(fator)
 }

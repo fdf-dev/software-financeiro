@@ -47,7 +47,8 @@ O fluxo principal possui as seguintes etapas:
 3. Alunos
 4. Serviços e locomoção
 5. Contrapartida Econômica
-6. Simulação
+6. Síntese dos valores
+7. Simulação
 
 As etapas aparecem em sequência. Depois que o projeto é configurado, etapas anteriores podem ser reabertas. As etapas futuras são liberadas conforme as validações das etapas anteriores são atendidas.
 
@@ -202,7 +203,42 @@ Valor da hora:
 
 O checkbox `Não é docente` altera automaticamente a fórmula utilizada. Quando o salário não é válido ou não foi informado, o valor da hora é exibido como `—`.
 
-## 9. Etapa Simulação
+## 9. Etapa Síntese dos valores
+
+A Síntese apresenta os valores totais calculados a partir das etapas anteriores:
+
+- Detalhamento linha a linha dos pesquisadores, com meses, salário mensal e valor no projeto.
+- Detalhamento linha a linha dos alunos, com meses, valor da bolsa e valor no projeto.
+- Detalhamento linha a linha dos serviços, com unidades, valor unitário e valor total.
+- Detalhamento linha a linha da contrapartida não financeira, com meses, valor mensal estimado e valor no projeto.
+- Total de salários mensais da equipe.
+- Total estimado de salários durante os meses de participação cadastrados.
+- Total de bolsas mensais dos alunos.
+- Total estimado de bolsas durante os meses de participação cadastrados.
+- Total de serviços e locomoção, calculado por unidade vezes valor.
+- Valor mensal estimado da contrapartida não financeira.
+- Valor estimado da contrapartida não financeira durante os meses de participação.
+- Total financeiro estimado.
+
+O total financeiro estimado soma somente salários da equipe, bolsas dos alunos e serviços. A contrapartida econômica pertence à área de contrapartida não financeira, é exibida separadamente e não compõe esse total.
+
+Os valores da Síntese são reativos e são atualizados quando os dados das etapas anteriores são alterados.
+
+Ao final da Síntese existem dois caminhos para a simulação:
+
+- Continuar com o modelo EMBRAPII Tripartite.
+- Continuar com o modelo SEBRAE.
+
+O modelo escolhido é identificado no cabeçalho da etapa Simulação.
+
+Quando o modelo EMBRAPII Tripartite é escolhido, uma etapa adicional é aberta antes da Simulação. Essa etapa repete as linhas da Síntese e permite classificar cada registro:
+
+- Pesquisadores, alunos e serviços: `Empresa` ou `EMBRAPII`.
+- Contrapartida não financeira: `P&D` ou `UE`.
+
+As classificações podem ser preenchidas linha a linha nessa etapa, mas não bloqueiam o avanço para a Simulação. Isso permite continuar com cadastros importados e completar as classificações posteriormente. No caminho SEBRAE, essa etapa específica não é exibida e o sistema segue diretamente para a Simulação.
+
+## 10. Etapa Simulação
 
 A simulação recebe:
 
@@ -223,7 +259,7 @@ O cálculo aplica juros sobre o saldo a cada mês e, em seguida, adiciona o apor
 
 A simulação é independente dos valores cadastrados em equipe, alunos, serviços e contrapartida. Atualmente, esses custos não são consolidados no resultado da simulação.
 
-## 10. Importação de cadastro completo
+## 11. Importação de cadastro completo
 
 A tela Projeto aceita arquivos CSV com cadastro de projeto, pesquisadores, alunos e serviços.
 
@@ -244,7 +280,7 @@ registro;nome;titulacao;cpf;salario;horas semanais;meses participacao;inicio par
 
 Registros de pessoas sem nome, titulação ou meses válidos são ignorados. O arquivo deve conter o cabeçalho do modelo para ser aceito.
 
-## 11. Modelo de cadastro
+## 12. Modelo de cadastro
 
 A aplicação possui uma função para preencher dados de exemplo e baixar o arquivo `modelo-cadastro-completo.csv`, com:
 
@@ -255,7 +291,7 @@ A aplicação possui uma função para preencher dados de exemplo e baixar o arq
 
 O arquivo é gerado no navegador, sem envio para servidor.
 
-## 12. Limpeza de dados
+## 13. Limpeza de dados
 
 As páginas possuem confirmação antes da limpeza.
 
@@ -269,7 +305,7 @@ As páginas possuem confirmação antes da limpeza.
 
 A limpeza da equipe não deve ser confundida com a limpeza de membros adicionados exclusivamente na Contrapartida. Os dados manuais da Contrapartida são mantidos em uma coleção separada.
 
-## 13. Estrutura técnica
+## 14. Estrutura técnica
 
 Arquivos principais:
 
@@ -287,12 +323,12 @@ Tecnologias utilizadas:
 - Tailwind CSS.
 - `currency.js` para apoio à formatação e cálculos monetários.
 
-## 14. Limitações atuais
+## 15. Limitações atuais
 
 - Os dados são perdidos ao recarregar ou fechar a página.
 - Não há banco de dados, login, usuários ou sincronização.
 - Não existe exportação do cadastro preenchido atual.
-- Não existe um total financeiro consolidado da equipe, alunos e serviços.
+- A Síntese calcula totais de cadastro, mas ainda não substitui um orçamento financeiro detalhado por centro de custo.
 - Serviços e bolsas não entram na simulação de juros.
 - A contrapartida não apresenta um total econômico consolidado.
 - A importação depende do cabeçalho e do formato do modelo CSV.
@@ -300,7 +336,7 @@ Tecnologias utilizadas:
 - Não há validação completa de todos os campos importados antes de liberar o uso.
 - O cálculo de horas semanais da Contrapartida é uma referência baseada em quatro semanas por mês.
 
-## 15. Estado de validação
+## 16. Estado de validação
 
 O build atual da aplicação é executado com:
 
